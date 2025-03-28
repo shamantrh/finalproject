@@ -2,7 +2,7 @@
 
 namespace finalproject.Domain.Entities
 {
-    public class User
+    public class User:IDisposable
     {
         public int id { get; set; }
         public string name { get; set; }
@@ -10,5 +10,9 @@ namespace finalproject.Domain.Entities
         public Role role { get; set; }
         public bool status { get; set; }
 
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

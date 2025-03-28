@@ -14,7 +14,7 @@ namespace finalproject.Application.Users.Handlers
         }
 
         public async Task<bool> Handle(UpdateUserStatusCommand request, CancellationToken cancellationToken) {
-            User user = await userService.GetUserById(request.id);
+            User user = await userService.GetUserByIdAsync(request.id);
             if (user == null)
             {
                 return false;

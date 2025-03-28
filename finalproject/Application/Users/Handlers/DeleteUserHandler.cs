@@ -13,7 +13,7 @@ namespace finalproject.Application.Users.Handlers
         }
         public async Task<bool> Handle(DeleteUserCommand deleteUserCommand, CancellationToken cancellationToken)
         {
-            var user = await userService.GetUserById(deleteUserCommand.id);
+            var user = await userService.GetUserByIdAsync(deleteUserCommand.id);
             if (user == null)
             {
                 return false;

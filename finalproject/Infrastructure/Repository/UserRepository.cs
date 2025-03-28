@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using finalproject.Domain.DTOs;
 using finalproject.Domain.Entities;
+using finalproject.Domain.Enums;
 using finalproject.Domain.Interface;
 using finalproject.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Components.Forms;
@@ -19,24 +20,25 @@ namespace finalproject.Infrastructure.Repository
 
         public async Task<int> AddUserAsync(User user)
         {
-            using (var db = _dapperContext.GetConnection()) {
                 var query = "INSERT INTO Users (name, email, role, status) " +
-                    "VALUES (@name, @email, @role, @status) " +
+                    "VALUES (@name123, @email, @role, @status) " +
                     "SELECT SCOPE_IDENTITY();";
-                int userId = await db.ExecuteScalarAsync<int>(query, new
-                {
-                    name = user.name,
-                    email = user.email,
-                    role = user.role,
-                    status = user.status
-                });
+            var param = new
+            {
+                name = user.name,
+                email = user.email,
+                role = user.role,
+                status = user.status
+            };
+            using (var db = _dapperContext.GetConnection()) {
+                int userId = await db.ExecuteScalarAsync<int>(query, param);
                 return userId;
             }
         }
 
         
 
-        public async Task<GetUser> GetUsersAsync(string? stringTerm, int pageNumber, int pageSize) {
+        public async Task<GetUser> GetUsersAsync(string? stringTerm, Role?_role, bool?_status, int pageNumber, int pageSize) {
             using (var db = _dapperContext.GetConnection()) {
                 var query = "SELECT * FROM Users " +
                     "ORDER BY id " +
@@ -49,42 +51,64 @@ namespace finalproject.Infrastructure.Repository
 
                 });
                 int _totalCount = await db.ExecuteScalarAsync<int>(totalCountQuery);
-                if (!String.IsNullOrEmpty(stringTerm))
+                if (!String.IsNullOrEmpty(stringTerm) || _role.HasValue || _status.HasValue)
                 {
-                    var queryForRes = "SELECT * FROM Users " +
-                        "where name LIKE @stringTerm OR email LIKE @stringTerm " +
-                        "ORDER BY id " +
-                        "OFFSET ((@pagenumber - 1) * @pagesize) ROWS " +
-                        "FETCH NEXT @pagesize ROWS ONLY;";
-                    var queryForTotalCount = "SELECT COUNT(*) FROM Users " +
-                        "where name LIKE @stringTerm OR email LIKE @stringTerm;";
+                    var queryForRes = "SELECT * FROM Users Where 1=1";
+
+                    var queryForTotalCount = "SELECT COUNT(*) FROM Users Where 1=1";
+
+                    if (!String.IsNullOrEmpty(stringTerm)) {
+                        queryForRes += "AND(name LIKE @stringTerm OR email LIKE @stringTerm)";
+                        queryForTotalCount += "AND(name LIKE @stringTerm OR email LIKE @stringTerm)";
+                    }
+                    if (_role.HasValue)
+                    {
+                        queryForRes += "AND role = @role ";
+                        queryForTotalCount += "AND role = @role ";
+                    }
+                    if (_status.HasValue)
+                    {
+                        queryForRes += "AND status = @status ";
+                        queryForTotalCount += "AND status = @status ";
+                    }
+
+                    queryForRes += "ORDER BY id " +
+                   "OFFSET ((@pagenumber - 1) * @pagesize) ROWS " +
+                   "FETCH NEXT @pagesize ROWS ONLY;";
+
+
                     var res2 = await db.QueryAsync<User>(queryForRes, new
                     {
                         pagenumber = pageNumber,
                         pagesize = pageSize,
-                        stringTerm = $"%{stringTerm}%"
+                        stringTerm = $"%{stringTerm}%",
+                        role = _role,
+                        status = _status
                     });
 
                     int totalCount1 = await db.ExecuteScalarAsync<int>(queryForTotalCount, new
                     {
-                        stringTerm = $"%{stringTerm}%"
+                        stringTerm = $"%{stringTerm}%",
+                        role = _role,
+                        status = _status
                     });
                     return new GetUser{
                         users = res2,
                         totalCount = totalCount1
                     };
                 }
+
             return new GetUser{
                 users = res,
             totalCount = _totalCount
         };
             }
         }
-        public async Task<User> GetUserById(int id)
+        public async Task<User> GetUserByIdAsync(int id)
         {
+            var query = "SELECT * FROM Users WHERE id = @id";
             using (var db = _dapperContext.GetConnection())
             {
-                var query = "SELECT * FROM Users WHERE id = @id";
                 return await db.QueryFirstOrDefaultAsync<User>(query, new { id = id });
             }
         }
@@ -106,3 +130,5 @@ namespace finalproject.Infrastructure.Repository
         }
     }
 }
+
+

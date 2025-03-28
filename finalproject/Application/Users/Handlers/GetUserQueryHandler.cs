@@ -16,7 +16,7 @@ namespace finalproject.Application.Users.Handlers
         }
         public async Task<GetUser> Handle(GetUserQuery getUserQuery, CancellationToken cancellationToken)
         {
-            var res = await _userService.GetUsersAsync(getUserQuery._searchTerm, getUserQuery._pageNumber, getUserQuery._pageSize);
+            var res = await _userService.GetUsersAsync(getUserQuery._searchTerm, getUserQuery._role, getUserQuery._status, getUserQuery._pageNumber, getUserQuery._pageSize);
             int totalCount = (int)Math.Ceiling((double)res.totalCount / getUserQuery._pageSize);
             return new GetUser
             {
